@@ -1,0 +1,13 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { buildHelpEmbed } = require("../src/modules/community/help");
+
+test("help embed contains key command families", () => {
+  const embed = buildHelpEmbed();
+  const text = embed.data.description;
+  assert.match(text, /\/guvenlik-paneli/);
+  assert.match(text, /\/partnerlik-kur/);
+  assert.match(text, /\/favori-ekle/);
+  assert.match(text, /\/bakiye/);
+});
+

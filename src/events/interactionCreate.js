@@ -1,0 +1,355 @@
+const { PermissionFlagsBits } = require("discord.js");
+const { closeTicket, createTicketChannel } = require("../modules/community/tickets");
+const { toggleSelfRole } = require("../modules/community/selfRoles");
+const {
+  updateEventAttendance,
+  eventButtons,
+  buildEventMessage,
+} = require("../modules/community/eventsystem");
+const {
+  buildPartnershipModal,
+  createPartnershipRequest,
+  approvePartnership,
+  rejectPartnership,
+  closePartnershipChannel,
+} = require("../modules/community/partnerships");
+const { patchGuildConfig, getGuildConfig } = require("../data/store");
+const { addAppeal } = require("../modules/moderation/appeals");
+const { infoEmbed, successEmbed, dangerEmbed } = require("../utils/embeds");
+
+function isPartnershipManager(interaction) {
+  const config = getGuildConfig(interaction.guildId);
+  const managerRoleId = config.community.partnership.managerRoleId;
+
+  if (interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+    return true;
+  }
+
+  return Boolean(managerRoleId && interaction.member.roles.cache.has(managerRoleId));
+}
+
+module.exports = {
+  name: "interactionCreate",
+  async execute(client, interaction) {
+    if (interaction.isChatInputCommand()) {
+      const command = client.commands.get(interaction.commandName);
+      if (!command) {
+        return;
+      }
+
+      try {
+        await command.execute(client, interaction);
+      } catch (error) {
+        const reply = {
+          embeds: [dangerEmbed("Komut Hatasi", error.message || "Beklenmeyen bir hata olustu.")],
+          ephemeral: true,
+        };
+
+        if (interaction.deferred || interaction.replied) {
+          await interaction.followUp(reply).catch(() => null);
+        } else {
+          await interaction.reply(reply).catch(() => null);
+        }
+      }
+
+      return;
+    }
+
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId === "appeal_modal") {
+        try {
+          const config = getGuildConfig(interaction.guildId);
+          if (!config.moderation.appealChannelId) {
+            throw new Error("Itiraz kanali ayarlanmamis.");
+          }
+
+          const channel = await interaction.guild.channels.fetch(config.moderation.appealChannelId).catch(() => null);
+          if (!channel?.isTextBased()) {
+            throw new Error("Itiraz kanali kullanilamiyor.");
+          }
+
+          const subject = interaction.fields.getTextInputValue("appeal_subject");
+          const body = interaction.fields.getTextInputValue("appeal_body");
+          addAppeal(interaction.guildId, {
+            id: `${Date.now()}`,
+            userId: interaction.user.id,
+            subject,
+            body,
+            createdAt: Date.now(),
+          });
+          await channel.send({ content: `Yeni itiraz: <@${interaction.user.id}>\n**${subject}**\n${body}` }).catch(() => null);
+          await interaction.reply({ embeds: [successEmbed("Itiraz Gonderildi", "Itiraz metnin inceleme kanalina gonderildi.")], ephemeral: true }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({ embeds: [dangerEmbed("Itiraz Hatasi", error.message)], ephemeral: true }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId === "partnership_modal") {
+        try {
+          const channel = await createPartnershipRequest(interaction);
+          await interaction.reply({
+            embeds: [successEmbed("Basvuru Gonderildi", `${channel} olusturuldu.`)],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Partnerlik Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+      }
+
+      return;
+    }
+
+    if (interaction.isButton()) {
+      if (interaction.customId.startsWith("security_toggle:")) {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+          await interaction.reply({ embeds: [dangerEmbed("Yetki Hatasi", "Bu panel yalnizca yoneticiler icindir.")], ephemeral: true }).catch(() => null);
+          return;
+        }
+
+        const key = interaction.customId.split(":")[1];
+        const config = getGuildConfig(interaction.guildId);
+        const map = {
+          antiRaid: ["security", "antiRaid", "enabled"],
+          antiSpam: ["security", "antiSpam", "enabled"],
+          antiAlt: ["security", "antiAlt", "enabled"],
+          antiPhishing: ["security", "antiPhishing", "enabled"],
+          risk: ["security", "risk", "enabled"],
+          scamShield: ["security", "scamShield", "enabled"],
+          moderatorAudit: ["security", "moderatorAudit", "enabled"],
+        };
+        const path = map[key];
+        if (!path) {
+          return;
+        }
+
+        const currentValue = config[path[0]][path[1]][path[2]];
+        patchGuildConfig(interaction.guildId, {
+          [path[0]]: {
+            [path[1]]: {
+              [path[2]]: !currentValue,
+            },
+          },
+        });
+
+        await interaction.reply({
+          embeds: [successEmbed("Guvenlik Modulu Guncellendi", `${key} artik **${!currentValue ? "acik" : "kapali"}**`)],
+          ephemeral: true,
+        }).catch(() => null);
+        return;
+      }
+
+      if (interaction.customId === "partnership_open") {
+        await interaction.showModal(buildPartnershipModal()).catch(() => null);
+        return;
+      }
+
+      if (interaction.customId.startsWith("event_join:")) {
+        try {
+          const eventId = interaction.customId.split(":")[1];
+          const event = updateEventAttendance(interaction.guildId, eventId, interaction.user.id, true);
+          await interaction.message.edit({
+            content: buildEventMessage(event),
+            components: [eventButtons(event.id)],
+          }).catch(() => null);
+          await interaction.reply({
+            embeds: [successEmbed("Etkinlige Katildin", `${event.title} katilim listesine eklendin.`)],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Etkinlik Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId.startsWith("event_leave:")) {
+        try {
+          const eventId = interaction.customId.split(":")[1];
+          const event = updateEventAttendance(interaction.guildId, eventId, interaction.user.id, false);
+          await interaction.message.edit({
+            content: buildEventMessage(event),
+            components: [eventButtons(event.id)],
+          }).catch(() => null);
+          await interaction.reply({
+            embeds: [successEmbed("Etkinlikten Ayrildin", `${event.title} katilim listesinden cikarildin.`)],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Etkinlik Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId === "partnership_approve") {
+        if (!isPartnershipManager(interaction)) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Yetki Hatasi", "Bu islem icin partnerlik yonetici yetkisi gerekli.")],
+            ephemeral: true,
+          }).catch(() => null);
+          return;
+        }
+
+        try {
+          await approvePartnership(interaction);
+          await interaction.reply({
+            embeds: [successEmbed("Partnerlik Onaylandi", "Basvuru basariyla onaylandi.")],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Partnerlik Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId === "partnership_reject") {
+        if (!isPartnershipManager(interaction)) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Yetki Hatasi", "Bu islem icin partnerlik yonetici yetkisi gerekli.")],
+            ephemeral: true,
+          }).catch(() => null);
+          return;
+        }
+
+        try {
+          await rejectPartnership(interaction);
+          await interaction.reply({
+            embeds: [successEmbed("Partnerlik Reddedildi", "Basvuru reddedildi ve arsivlendi.")],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Partnerlik Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId === "partnership_close") {
+        if (!isPartnershipManager(interaction)) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Yetki Hatasi", "Bu islem icin partnerlik yonetici yetkisi gerekli.")],
+            ephemeral: true,
+          }).catch(() => null);
+          return;
+        }
+
+        try {
+          await closePartnershipChannel(interaction);
+          await interaction.reply({
+            embeds: [successEmbed("Partnerlik Arsivlendi", "Kanal arsiv kategorisine tasindi.")],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Partnerlik Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId === "ticket_open") {
+        try {
+          const channel = await createTicketChannel(interaction);
+          await interaction.reply({
+            embeds: [successEmbed("Ticket Acildi", `${channel} olusturuldu.`)],
+            ephemeral: true,
+          });
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Ticket Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId === "ticket_close") {
+        await interaction.reply({
+          embeds: [infoEmbed("Ticket Kapatiliyor", "Transcript aliniyor ve kanal kapatiliyor.")],
+          ephemeral: true,
+        }).catch(() => null);
+        await closeTicket(interaction);
+        return;
+      }
+
+      if (interaction.customId === "ticket_claim") {
+        await interaction.reply({
+          embeds: [successEmbed("Ticket Ustlenildi", `${interaction.user} bu ticket ile ilgileniyor.`)],
+        }).catch(() => null);
+        return;
+      }
+
+      if (interaction.customId === "verify_member") {
+        try {
+          const guildConfig = getGuildConfig(interaction.guildId);
+          const verifiedRoleId = guildConfig.security.verifiedRoleId;
+          const unverifiedRoleId = guildConfig.security.unverifiedRoleId;
+
+          if (!verifiedRoleId) {
+            throw new Error("Dogrulama rolu ayarlanmamis.");
+          }
+
+          const verifiedRole = interaction.guild.roles.cache.get(verifiedRoleId);
+          const unverifiedRole = unverifiedRoleId
+            ? interaction.guild.roles.cache.get(unverifiedRoleId)
+            : null;
+
+          if (verifiedRole) {
+            await interaction.member.roles.add(verifiedRole).catch(() => null);
+          }
+
+          if (unverifiedRole && interaction.member.roles.cache.has(unverifiedRole.id)) {
+            await interaction.member.roles.remove(unverifiedRole).catch(() => null);
+          }
+
+          await interaction.reply({
+            embeds: [successEmbed("Dogrulama Tamam", "Artik tam erisim sahibisin.")],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Dogrulama Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+        return;
+      }
+
+      if (interaction.customId.startsWith("selfrole:")) {
+        const roleId = interaction.customId.split(":")[1];
+
+        try {
+          const result = await toggleSelfRole(interaction, roleId);
+          await interaction.reply({
+            embeds: [
+              successEmbed(
+                result.added ? "Rol Verildi" : "Rol Kaldirildi",
+                `${result.role.name} rolunde durumun guncellendi.`,
+              ),
+            ],
+            ephemeral: true,
+          }).catch(() => null);
+        } catch (error) {
+          await interaction.reply({
+            embeds: [dangerEmbed("Rol Islem Hatasi", error.message)],
+            ephemeral: true,
+          }).catch(() => null);
+        }
+      }
+    }
+  },
+};
