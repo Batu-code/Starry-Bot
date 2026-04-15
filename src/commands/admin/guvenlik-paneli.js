@@ -18,6 +18,10 @@ module.exports = {
       new ButtonBuilder().setCustomId("security_toggle:scamShield").setLabel("Scam Shield").setStyle(ButtonStyle.Danger),
       new ButtonBuilder().setCustomId("security_toggle:moderatorAudit").setLabel("Yetkili Denetim").setStyle(ButtonStyle.Secondary),
     );
-    await interaction.reply({ embeds: [infoEmbed("Guvenlik Paneli", "Modulleri acip kapatmak icin butonlari kullan.")], components: [row, rowTwo], ephemeral: true });
+    const rowThree = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("security_action:permissionAudit").setLabel("Izin Denetimi").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId("security_action:prodStatus").setLabel("Prod Durumu").setStyle(ButtonStyle.Secondary),
+    );
+    await interaction.reply({ embeds: [infoEmbed("Guvenlik Paneli", "Modulleri acip kapatmak veya sistem durumunu kontrol etmek icin butonlari kullan.")], components: [row, rowTwo, rowThree], ephemeral: true });
   },
 };

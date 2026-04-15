@@ -15,9 +15,14 @@ module.exports = {
     .addRoleOption((option) => option.setName("rol_2").setDescription("Ikinci rol").setRequired(true))
     .addRoleOption((option) => option.setName("rol_3").setDescription("Ucuncu rol").setRequired(false))
     .addRoleOption((option) => option.setName("rol_4").setDescription("Dorduncu rol").setRequired(false))
-    .addRoleOption((option) => option.setName("rol_5").setDescription("Besinci rol").setRequired(false)),
+    .addRoleOption((option) => option.setName("rol_5").setDescription("Besinci rol").setRequired(false))
+    .addRoleOption((option) => option.setName("rol_6").setDescription("Altinci rol").setRequired(false))
+    .addRoleOption((option) => option.setName("rol_7").setDescription("Yedinci rol").setRequired(false))
+    .addRoleOption((option) => option.setName("rol_8").setDescription("Sekizinci rol").setRequired(false))
+    .addRoleOption((option) => option.setName("rol_9").setDescription("Dokuzuncu rol").setRequired(false))
+    .addRoleOption((option) => option.setName("rol_10").setDescription("Onuncu rol").setRequired(false)),
   async execute(client, interaction) {
-    const roles = ["rol_1", "rol_2", "rol_3", "rol_4", "rol_5"]
+    const roles = ["rol_1", "rol_2", "rol_3", "rol_4", "rol_5", "rol_6", "rol_7", "rol_8", "rol_9", "rol_10"]
       .map((name) => interaction.options.getRole(name))
       .filter(Boolean)
       .map((role) => ({ id: role.id, label: role.name }));
@@ -30,7 +35,7 @@ module.exports = {
 
     await interaction.channel.send({
       embeds: [infoEmbed("Rol Paneli", "Istegin role butonlardan tiklayarak giris yapabilirsin.")],
-      components: [buildSelfRoleButtons(roles)],
+      components: buildSelfRoleButtons(roles),
     });
 
     await interaction.reply({

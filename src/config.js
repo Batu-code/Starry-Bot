@@ -10,6 +10,7 @@ for (const key of required) {
 }
 
 module.exports = {
+  nodeEnv: process.env.NODE_ENV || "development",
   token: process.env.DISCORD_TOKEN,
   clientId: process.env.CLIENT_ID,
   guildId: process.env.GUILD_ID || null,
@@ -20,8 +21,12 @@ module.exports = {
   databasePath: path.resolve(__dirname, "..", process.env.DATABASE_PATH || "./data/bot.sqlite"),
   dashboard: {
     enabled: String(process.env.DASHBOARD_ENABLED || "false").toLowerCase() === "true",
+    host: process.env.DASHBOARD_HOST || "0.0.0.0",
     port: Number(process.env.DASHBOARD_PORT || 3000),
     token: process.env.DASHBOARD_TOKEN || "change_me",
+  },
+  runtimeHealth: {
+    maxAgeMs: Number(process.env.HEARTBEAT_MAX_AGE_MS || 180000),
   },
   ai: {
     enabled: String(process.env.AI_ENABLED || "false").toLowerCase() === "true",

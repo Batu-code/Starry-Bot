@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { getModeratorStats, getModerationSummary } = require("../../modules/moderation/cases");
+const { getStaffLeaderboard } = require("../../modules/community/staffStats");
 const { infoEmbed } = require("../../utils/embeds");
 
 module.exports = {
@@ -15,6 +16,9 @@ module.exports = {
       .slice(0, 10)
       .map(([moderatorId, data]) => `<@${moderatorId}> - ${data.total} islem`)
       .join("\n") || "Veri yok.";
+    const staff = getStaffLeaderboard(interaction.guildId, 5)
+      .map(({ userId, entry }) => `<@${userId}> - ${entry.score} puan`)
+      .join("\n") || "Veri yok.";
 
     await interaction.reply({
       embeds: [
@@ -24,7 +28,11 @@ module.exports = {
             `Toplam vaka: **${summary.total}**`,
             `Turler: ${Object.entries(summary.byType).map(([type, count]) => `${type}:${count}`).join(", ") || "Yok"}`,
             "",
+            "**Moderasyon**",
             lines,
+            "",
+            "**Yetkili Skoru**",
+            staff,
           ].join("\n"),
         ),
       ],
@@ -32,4 +40,3 @@ module.exports = {
     });
   },
 };
-

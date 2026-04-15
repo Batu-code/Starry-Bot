@@ -10,6 +10,10 @@ function deepMerge(target, source) {
   }
 
   for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) {
+      continue;
+    }
+
     if (Array.isArray(value)) {
       output[key] = [...value];
       continue;
@@ -29,4 +33,3 @@ function deepMerge(target, source) {
 module.exports = {
   deepMerge,
 };
-

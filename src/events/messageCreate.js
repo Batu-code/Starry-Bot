@@ -2,9 +2,12 @@ const { handleMessageSecurity } = require("../modules/security/antiSpam");
 const { handlePhishingProtection } = require("../modules/security/antiPhishing");
 const { handleScamShield } = require("../modules/security/scamShield");
 const { handleAutoResponses } = require("../modules/community/autoResponses");
-const { handleLeveling } = require("../modules/community/leveling");
+const { handlePrefixCommand } = require("../modules/community/prefixCommands");
+const { handleCustomCommand } = require("../modules/community/customCommands");
 const { getGuildConfig } = require("../data/store");
 const { generateSupportAnswer, isAiAvailable } = require("../modules/ai/openai");
+const { recordMessageActivity } = require("../modules/progression/ranking");
+const { evaluateAutoStaff } = require("../modules/community/staffRecruitment");
 
 module.exports = {
   name: "messageCreate",
@@ -23,10 +26,17 @@ module.exports = {
       return;
     }
 
-    const autoResponseSent = await handleAutoResponses(message);
-    if (autoResponseSent) {
+    const prefixHandled = await handlePrefixCommand(message);
+    if (prefixHandled) {
       return;
     }
+
+    const customHandled = await handleCustomCommand(message);
+    if (customHandled) {
+      return;
+    }
+
+    await handleAutoResponses(message);
 
     const guildConfig = getGuildConfig(message.guild.id);
     const aiConfig = guildConfig.community.ai;
@@ -48,7 +58,12 @@ module.exports = {
       }
     }
 
-    await handleMessageSecurity(client, message);
-    await handleLeveling(client, message);
+    const blocked = await handleMessageSecurity(client, message);
+    if (blocked) {
+      return;
+    }
+
+    await recordMessageActivity(client, message);
+    await evaluateAutoStaff(message.member, "Chat seviyesi ile otomatik yetkili alim").catch(() => null);
   },
 };

@@ -13,11 +13,26 @@ module.exports = {
     const user = interaction.options.getUser("uye") || interaction.user;
     const config = getGuildConfig(interaction.guildId);
     const total = config.stats.invites?.[user.id] || 0;
+    const detail = config.stats.inviteDetails?.[user.id] || {
+      regular: total,
+      fake: 0,
+      leaves: 0,
+      bonusClaimed: [],
+    };
 
     await interaction.reply({
-      embeds: [infoEmbed("Davet Istatisigi", `${user} toplam **${total}** kisi getirmis.`)],
+      embeds: [
+        infoEmbed(
+          "Davet Istatisigi",
+          [
+            `${user} toplam **${total}** gecerli davet getirmis.`,
+            `Fake: **${detail.fake || 0}**`,
+            `Cikis: **${detail.leaves || 0}**`,
+            `Bonus esik: **${(detail.bonusClaimed || []).join(", ") || "Yok"}**`,
+          ].join("\n"),
+        ),
+      ],
       ephemeral: true,
     });
   },
 };
-

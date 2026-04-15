@@ -33,6 +33,13 @@ const DEFAULT_GUILD_CONFIG = {
       timeoutMs: 10 * 60 * 1000,
       inviteBlockEnabled: true,
     },
+    autoMute: {
+      enabled: true,
+      durationMs: 30 * 60 * 1000,
+      deleteMessage: true,
+      blockedWords: [],
+      ignoredRoleIds: [],
+    },
     antiPhishing: {
       enabled: true,
       suspiciousDomains: [
@@ -97,6 +104,9 @@ const DEFAULT_GUILD_CONFIG = {
     snapshots: {
       enabled: true,
       keepLast: 5,
+      autoCreateEnabled: false,
+      autoCreateIntervalHours: 12,
+      lastAutoSnapshotAt: 0,
     },
     lockdown: {
       active: false,
@@ -107,21 +117,35 @@ const DEFAULT_GUILD_CONFIG = {
   community: {
     logChannelId: null,
     welcomeChannelId: null,
+    leaveChannelId: null,
     welcomeMessage:
       "Sunucuya hos geldin {user}. Kurallar kanalini okuyup topluluga katil!",
+    leaveMessage:
+      "{userTag} sunucudan ayrildi. Simdi **{memberCount}** uye kaldik.",
     autoRoleIds: [],
     verificationChannelId: null,
     ticket: {
       categoryId: null,
+      archiveCategoryId: null,
       panelChannelId: null,
       transcriptChannelId: null,
+      logChannelId: null,
       supportRoleId: null,
       counter: 0,
+      records: {},
+      types: [
+        { id: "destek", label: "Destek" },
+        { id: "bug", label: "Bug Bildirimi" },
+        { id: "yetkili", label: "Yetkili Yardimi" },
+        { id: "odeme", label: "Odeme" },
+        { id: "diger", label: "Diger" },
+      ],
     },
-    leveling: {
-      enabled: true,
-      levelUpChannelId: null,
-      cooldownMs: 60000,
+    boost: {
+      channelId: null,
+      roleId: null,
+      message:
+        "Tesekkurler {user}, sunucuyu boostladigin icin kalptesin. Toplam boost: **{boostCount}**",
     },
     autoResponses: {
       enabled: true,
@@ -201,6 +225,49 @@ const DEFAULT_GUILD_CONFIG = {
       systemPrompt:
         "Sen bu Discord sunucusunun Turkce destek asistanisin. Net, kisa ve yardimci cevap ver. Guvenlik veya moderasyon konularinda riskli yonlendirme yapma.",
     },
+    autoMessages: [],
+    customCommands: [],
+    applications: {
+      enabled: false,
+      categoryId: null,
+      panelChannelId: null,
+      logChannelId: null,
+      reviewRoleId: null,
+      counter: 0,
+      records: {},
+      types: [
+        { id: "yetkili", label: "Yetkili Basvurusu" },
+        { id: "tasarimci", label: "Tasarimci Basvurusu" },
+        { id: "partner", label: "Partner Sorumlusu Basvurusu" },
+        { id: "etkinlik", label: "Etkinlik Ekibi Basvurusu" },
+      ],
+    },
+    feedback: {
+      enabled: false,
+      panelChannelId: null,
+      suggestionChannelId: null,
+      complaintChannelId: null,
+      logChannelId: null,
+      reviewRoleId: null,
+      counter: 0,
+      items: {},
+    },
+    invites: {
+      enabled: true,
+      fakeAccountAgeMs: 3 * 24 * 60 * 60 * 1000,
+      decrementOnLeave: true,
+      bonusMilestones: [5, 10, 25, 50],
+      milestoneReward: 250,
+    },
+    staffRecruitment: {
+      enabled: false,
+      roleId: null,
+      logChannelId: null,
+      minMessageLevel: 5,
+      minVoiceHours: 10,
+      minInviteCount: 0,
+      minPartnerScore: 0,
+    },
   },
   music: {
     enabled: true,
@@ -215,6 +282,7 @@ const DEFAULT_GUILD_CONFIG = {
   state: {
     raidModeUntil: null,
     inviteCache: {},
+    inviteJoins: {},
   },
   moderation: {
     cases: [],
@@ -233,6 +301,19 @@ const DEFAULT_GUILD_CONFIG = {
     },
   },
   progression: {
+    leveling: {
+      enabled: true,
+      announceLevelUps: true,
+      levelUpChannelId: null,
+      messageCooldownMs: 60 * 1000,
+      messageXpMin: 12,
+      messageXpMax: 24,
+      voiceXpPerMinute: 4,
+    },
+    partnering: {
+      approvalPoints: 30,
+      renewalPoints: 12,
+    },
     profiles: {},
     achievements: {},
     dailyTasks: {},
@@ -276,11 +357,23 @@ const DEFAULT_GUILD_CONFIG = {
   stats: {
     messages: {},
     voiceSeconds: {},
+    partnerScores: {},
     invites: {},
+    inviteDetails: {},
+    staff: {},
   },
   automation: {
     announcementChannelId: null,
     scheduledAnnouncements: [],
+    weeklyReports: {
+      enabled: false,
+      channelId: null,
+      dayOfWeek: 1,
+      hour: 21,
+      minute: 0,
+      timeZone: "Europe/Istanbul",
+      lastSentAt: 0,
+    },
   },
 };
 

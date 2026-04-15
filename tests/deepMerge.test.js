@@ -28,3 +28,19 @@ test("deepMerge merges nested objects without mutating arrays by reference", () 
   assert.notEqual(result.nested.values, patch.nested.values);
 });
 
+test("deepMerge ignores undefined values in overrides", () => {
+  const result = deepMerge(
+    {
+      community: {
+        welcomeMessage: "merhaba",
+      },
+    },
+    {
+      community: {
+        welcomeMessage: undefined,
+      },
+    },
+  );
+
+  assert.equal(result.community.welcomeMessage, "merhaba");
+});

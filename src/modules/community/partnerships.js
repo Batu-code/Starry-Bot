@@ -12,6 +12,8 @@ const { getGuildConfig, patchGuildConfig } = require("../../data/store");
 const { sendLog } = require("../logging/sendLog");
 const { COLORS } = require("../../constants");
 const { grantBadge } = require("../progression/profiles");
+const { recordPartnerApproval } = require("../progression/ranking");
+const { evaluateAutoStaff } = require("./staffRecruitment");
 
 function partnershipButtons() {
   return new ActionRowBuilder().addComponents(
@@ -323,6 +325,12 @@ async function approvePartnership(interaction) {
     approvedAt: Date.now(),
   });
   grantBadge(interaction.guildId, applicantId, "partner");
+  recordPartnerApproval(interaction.guildId, applicantId);
+
+  const applicantMember = await interaction.guild.members.fetch(applicantId).catch(() => null);
+  if (applicantMember) {
+    await evaluateAutoStaff(applicantMember, "Partner puani ile otomatik yetkili alim").catch(() => null);
+  }
 
   await archivePartnershipChannel(interaction.channel, settings.archiveCategoryId);
   await interaction.channel.send({

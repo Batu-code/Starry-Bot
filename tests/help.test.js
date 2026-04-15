@@ -7,7 +7,8 @@ test("help embed contains key command families", () => {
   const text = embed.data.description;
   assert.match(text, /\/guvenlik-paneli/);
   assert.match(text, /\/partnerlik-kur/);
+  assert.match(text, /\/setup-sihirbazi/);
+  assert.match(text, /\/ticket-v2-kur/);
   assert.match(text, /\/favori-ekle/);
   assert.match(text, /\/bakiye/);
 });
-

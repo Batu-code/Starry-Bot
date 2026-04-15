@@ -14,7 +14,7 @@ function formatDuration(ms) {
 }
 
 function parseDuration(input) {
-  const regex = /(\d+)\s*(s|sn|m|dk|h|sa|d|g)/gi;
+  const regex = /(\d+)\s*(sn|dk|sa|s|m|h|d|g)/gi;
   let match;
   let total = 0;
 

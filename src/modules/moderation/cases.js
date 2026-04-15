@@ -1,4 +1,5 @@
 const { getGuildConfig, patchGuildConfig } = require("../../data/store");
+const { recordStaffAction } = require("../community/staffStats");
 
 function getCases(guildId) {
   return getGuildConfig(guildId).moderation.cases || [];
@@ -19,6 +20,14 @@ function addCase(guildId, payload) {
       cases,
     },
   });
+
+  if (entry.moderatorId) {
+    recordStaffAction(guildId, entry.moderatorId, "moderation", {
+      caseId: entry.id,
+      type: entry.type,
+      targetId: entry.targetId || null,
+    });
+  }
 
   return entry;
 }

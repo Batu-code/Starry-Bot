@@ -6,9 +6,15 @@ const {
 const { getGuildConfig } = require("../../data/store");
 
 function buildSelfRoleButtons(roles) {
-  const row = new ActionRowBuilder();
+  const rows = [];
+  let row = new ActionRowBuilder();
 
-  for (const role of roles.slice(0, 5)) {
+  for (const [index, role] of roles.slice(0, 25).entries()) {
+    if (index > 0 && index % 5 === 0) {
+      rows.push(row);
+      row = new ActionRowBuilder();
+    }
+
     row.addComponents(
       new ButtonBuilder()
         .setCustomId(`selfrole:${role.id}`)
@@ -17,7 +23,11 @@ function buildSelfRoleButtons(roles) {
     );
   }
 
-  return row;
+  if (row.components.length) {
+    rows.push(row);
+  }
+
+  return rows;
 }
 
 async function toggleSelfRole(interaction, roleId) {
@@ -45,4 +55,3 @@ module.exports = {
   buildSelfRoleButtons,
   toggleSelfRole,
 };
-

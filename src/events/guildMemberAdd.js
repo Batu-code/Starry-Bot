@@ -4,6 +4,7 @@ const { handleAltProtection } = require("../modules/security/antiAlt");
 const { sendLog } = require("../modules/logging/sendLog");
 const { COLORS } = require("../constants");
 const { detectInviteUse } = require("../modules/security/inviteTracker");
+const { buildTemplateContext, applyTemplate } = require("../modules/community/templates");
 
 module.exports = {
   name: "guildMemberAdd",
@@ -24,18 +25,29 @@ module.exports = {
       }
     }
 
+    const raidState = await handleMemberJoin(client, member);
+    await handleAltProtection(member).catch(() => null);
+    const usedInvite = await detectInviteUse(member).catch(() => null);
+
     const welcomeChannel = guildConfig.community.welcomeChannelId
       ? await member.guild.channels.fetch(guildConfig.community.welcomeChannelId).catch(() => null)
       : null;
 
     if (welcomeChannel?.isTextBased()) {
-      const content = guildConfig.community.welcomeMessage.replace("{user}", `${member}`);
+      const content = applyTemplate(
+        guildConfig.community.welcomeMessage,
+        buildTemplateContext({
+          user: `${member}`,
+          userTag: member.user.tag,
+          username: member.user.username,
+          guild: member.guild.name,
+          memberCount: member.guild.memberCount,
+          boostCount: member.guild.premiumSubscriptionCount || 0,
+          inviter: usedInvite?.inviterId ? `<@${usedInvite.inviterId}>` : "Bilinmiyor",
+        }),
+      );
       await welcomeChannel.send({ content }).catch(() => null);
     }
-
-    const raidState = await handleMemberJoin(client, member);
-    await handleAltProtection(member).catch(() => null);
-    await detectInviteUse(member).catch(() => null);
 
     await sendLog(member.guild, {
       color: raidState.raidMode ? COLORS.warning : COLORS.success,

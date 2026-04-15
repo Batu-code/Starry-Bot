@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { buildModeratorAudit, getModeratorTrustScore } = require("../../modules/security/moderatorAudit");
+const { getStaffEntry } = require("../../modules/community/staffStats");
 const { infoEmbed } = require("../../utils/embeds");
 
 module.exports = {
@@ -15,6 +16,7 @@ module.exports = {
 
     if (user) {
       const report = getModeratorTrustScore(interaction.guildId, user.id);
+      const staff = getStaffEntry(interaction.guildId, user.id);
       const byType = Object.entries(report.audit.byType)
         .map(([type, count]) => `${type}:${count}`)
         .join(", ") || "Kayit yok";
@@ -26,6 +28,7 @@ module.exports = {
             [
               `Yetkili: ${user}`,
               `Guven puani: **${report.score}/100**`,
+              `Performans puani: **${staff.score || 0}**`,
               `Durum: **${report.level}**`,
               `Toplam kayit: **${report.audit.total}**`,
               `Turler: ${byType}`,

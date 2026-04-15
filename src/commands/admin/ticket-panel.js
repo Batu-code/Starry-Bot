@@ -21,7 +21,7 @@ module.exports = {
     });
 
     await interaction.channel.send({
-      embeds: [infoEmbed("Destek Merkezi", "Yeni destek talebi icin butona tikla.")],
+      embeds: [infoEmbed("Destek Merkezi", "Yeni destek talebi icin butona tikla, sonra ticket turunu sec.")],
       components: [ticketButtons()],
     });
 

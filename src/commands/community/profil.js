@@ -1,8 +1,10 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { getGuildConfig } = require("../../data/store");
 const { getProfile } = require("../../modules/progression/profiles");
+const { getCombinedRankProfile } = require("../../modules/progression/ranking");
 const { getBalance } = require("../../modules/economy/system");
 const { infoEmbed } = require("../../utils/embeds");
+const { formatDuration } = require("../../utils/time");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,18 +14,22 @@ module.exports = {
   async execute(client, interaction) {
     const user = interaction.options.getUser("uye") || interaction.user;
     const config = getGuildConfig(interaction.guildId);
-    const level = config.stats.messages[user.id]?.level || 0;
-    const xp = config.stats.messages[user.id]?.xp || 0;
     const invites = config.stats.invites[user.id] || 0;
     const profile = getProfile(interaction.guildId, user.id);
+    const rankProfile = getCombinedRankProfile(interaction.guildId, user.id);
     const balance = getBalance(interaction.guildId, user.id);
     await interaction.reply({
       embeds: [
         infoEmbed(
           `${user.username} profili`,
           [
-            `Seviye: **${level}**`,
-            `XP: **${xp}**`,
+            `Chat seviye: **${rankProfile.message.level}**`,
+            `Chat XP: **${rankProfile.message.xp}**`,
+            `Mesaj: **${rankProfile.message.messageCount}**`,
+            `Ses seviye: **${rankProfile.voice.level}**`,
+            `Aktif ses: **${formatDuration(rankProfile.voice.activeSeconds * 1000)}**`,
+            `Deafen: **${formatDuration(rankProfile.voice.deafenedSeconds * 1000)}**`,
+            `Partner puani: **${rankProfile.partner.score}**`,
             `Davet: **${invites}**`,
             `Bakiye: **${balance}**`,
             `Rozet: ${profile.badges.length ? profile.badges.join(", ") : "Yok"}`,
@@ -35,4 +41,3 @@ module.exports = {
     });
   },
 };
-

@@ -1,5 +1,6 @@
 const { ChannelType } = require("discord.js");
-const { getGuildConfig, getRuntime, saveRuntime } = require("../../data/store");
+const { getGuildConfig, getRuntime, saveRuntime, patchGuildConfig } = require("../../data/store");
+const { createBackup } = require("./backups");
 
 function listSnapshots() {
   return getRuntime("snapshots", []);
@@ -130,9 +131,36 @@ async function restoreSnapshot(guild, snapshot) {
   }
 }
 
+async function processAutoSnapshots(client) {
+  for (const guild of client.guilds.cache.values()) {
+    const config = getGuildConfig(guild.id);
+    const settings = config.security.snapshots;
+    if (!settings.enabled || !settings.autoCreateEnabled) {
+      continue;
+    }
+
+    const intervalMs = Math.max(1, settings.autoCreateIntervalHours || 12) * 60 * 60 * 1000;
+    if (Date.now() - (settings.lastAutoSnapshotAt || 0) < intervalMs) {
+      continue;
+    }
+
+    await createSnapshot(guild).catch(() => null);
+    await createBackup(guild).catch(() => null);
+
+    patchGuildConfig(guild.id, {
+      security: {
+        snapshots: {
+          lastAutoSnapshotAt: Date.now(),
+        },
+      },
+    });
+  }
+}
+
 module.exports = {
   listSnapshots,
   createSnapshot,
   getSnapshot,
   restoreSnapshot,
+  processAutoSnapshots,
 };

@@ -15,7 +15,6 @@ class BotClient extends Client {
         GatewayIntentBits.GuildModeration,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildPresences,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.MessageContent,
       ],
@@ -30,6 +29,7 @@ class BotClient extends Client {
       antiRaid: new Map(),
       tempVoiceOwners: new Map(),
       levelCooldowns: new Map(),
+      voiceSessions: new Map(),
     };
 
     this.player = new Player(this);

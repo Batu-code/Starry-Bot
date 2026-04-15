@@ -4,6 +4,7 @@ const { getGuildConfig, patchGuildConfig } = require("../data/store");
 const { createBackup, listBackups } = require("../modules/security/backups");
 const { addBalance } = require("../modules/economy/system");
 const { scheduleAnnouncement } = require("../modules/community/announcements");
+const { buildProdStatus } = require("../modules/system/runtimeHealth");
 const logger = require("../utils/logger");
 
 function authMiddleware(req, res, next) {
@@ -27,6 +28,10 @@ function summarizeGuild(client, guild) {
       ai: cfg.community.ai.enabled,
       music: cfg.music.enabled,
       partnership: cfg.community.partnership.enabled,
+      applications: cfg.community.applications.enabled,
+      feedback: cfg.community.feedback.enabled,
+      customCommands: (cfg.community.customCommands || []).length,
+      weeklyReports: cfg.automation.weeklyReports.enabled,
     },
   };
 }
@@ -41,6 +46,8 @@ function renderHome(client) {
         <p>Uye: ${guild.members}</p>
         <p>Anti-Raid: ${guild.features.antiRaid ? "Acik" : "Kapali"} | AI: ${guild.features.ai ? "Acik" : "Kapali"}</p>
         <p>Muzik: ${guild.features.music ? "Acik" : "Kapali"} | Partnerlik: ${guild.features.partnership ? "Acik" : "Kapali"}</p>
+        <p>Basvuru: ${guild.features.applications ? "Acik" : "Kapali"} | Geri Bildirim: ${guild.features.feedback ? "Acik" : "Kapali"} | Ozel Komut: ${guild.features.customCommands}</p>
+        <p>Haftalik Rapor: ${guild.features.weeklyReports ? "Acik" : "Kapali"}</p>
         <p><a href="/guilds/${guild.id}?token=${encodeURIComponent(config.dashboard.token)}">Detay sayfasi</a></p>
         <p>API: <code>/api/guilds/${guild.id}/overview?token=...</code></p>
       </section>`,
@@ -51,7 +58,7 @@ function renderHome(client) {
   <html lang="tr">
     <head>
       <meta charset="utf-8" />
-      <title>The Art Of Yapping Bot Panel</title>
+      <title>Bocchi Panel</title>
       <style>
         body { font-family: Segoe UI, sans-serif; background: linear-gradient(135deg, #101b2d, #1e385a); color: #eef3f8; margin: 0; padding: 32px; }
         h1 { margin-top: 0; }
@@ -61,7 +68,7 @@ function renderHome(client) {
       </style>
     </head>
     <body>
-      <h1>The Art Of Yapping Bot Dashboard</h1>
+      <h1>Bocchi Dashboard</h1>
       <p>Bu panel token korumali API ile birlikte gelir. Gercek kullanimda reverse proxy ve HTTPS onerilir.</p>
       <div class="grid">${guildCards}</div>
     </body>
@@ -87,6 +94,12 @@ function getGuildDetail(client, guildId) {
     richest,
     partners: (cfg.community.partnership.partners || []).slice(-5).reverse(),
     backups: listBackups().filter((entry) => entry.guildId === guild.id).slice(0, 5),
+    tickets: Object.values(cfg.community.ticket.records || {}).slice(-5).reverse(),
+    applications: Object.values(cfg.community.applications.records || {}).slice(-5).reverse(),
+    feedbackItems: Object.values(cfg.community.feedback.items || {}).slice(-5).reverse(),
+    topChat: Object.entries(cfg.stats.messages || {})
+      .sort((a, b) => (b[1].xp || 0) - (a[1].xp || 0))
+      .slice(0, 5),
   };
 }
 
@@ -96,7 +109,8 @@ function renderGuildDetail(client, guildId) {
     return null;
   }
 
-  const { guild, cfg, moderationCases, richest, partners, backups } = detail;
+  const { guild, cfg, moderationCases, richest, partners, backups, tickets, applications, feedbackItems, topChat } = detail;
+  const prod = buildProdStatus();
   return `<!doctype html>
   <html lang="tr">
     <head>
@@ -122,6 +136,13 @@ function renderGuildDetail(client, guildId) {
           <p>AI: ${cfg.community.ai.enabled ? "Acik" : "Kapali"}</p>
         </section>
         <section class="card">
+          <h2>Prod</h2>
+          <p>Durum: ${prod.status}</p>
+          <p>Saglikli: ${prod.healthy ? "Evet" : "Hayir"}</p>
+          <p>PID: ${prod.pid || "-"}</p>
+          <p>Bellek: ${prod.memoryMb} MB</p>
+        </section>
+        <section class="card">
           <h2>Ekonomi Liderleri</h2>
           <div>${richest.length ? richest.map(([id, amount]) => `<p class="mono">${id} - ${amount}</p>`).join("") : "<p>Veri yok</p>"}</div>
         </section>
@@ -132,6 +153,28 @@ function renderGuildDetail(client, guildId) {
         <section class="card">
           <h2>Partnerlik</h2>
           <div>${partners.length ? partners.map((entry) => `<p>${entry.serverName} - ${entry.memberCount} uye</p>`).join("") : "<p>Partner yok</p>"}</div>
+        </section>
+        <section class="card">
+          <h2>Ticket v2</h2>
+          <div>${tickets.length ? tickets.map((entry) => `<p>${entry.typeLabel} - ${entry.status} - ${entry.subject}</p>`).join("") : "<p>Ticket kaydi yok</p>"}</div>
+        </section>
+        <section class="card">
+          <h2>Basvurular</h2>
+          <div>${applications.length ? applications.map((entry) => `<p>${entry.typeLabel} - ${entry.status}</p>`).join("") : "<p>Basvuru yok</p>"}</div>
+        </section>
+        <section class="card">
+          <h2>Geri Bildirim</h2>
+          <div>${feedbackItems.length ? feedbackItems.map((entry) => `<p>${entry.kind} - ${entry.status} - ${entry.title}</p>`).join("") : "<p>Kayit yok</p>"}</div>
+        </section>
+        <section class="card">
+          <h2>Haftalik Rapor</h2>
+          <p>Kanal: ${cfg.automation.weeklyReports.channelId ? cfg.automation.weeklyReports.channelId : "Kapali"}</p>
+          <p>Gun: ${cfg.automation.weeklyReports.dayOfWeek}</p>
+          <p>Saat: ${String(cfg.automation.weeklyReports.hour).padStart(2, "0")}:${String(cfg.automation.weeklyReports.minute).padStart(2, "0")}</p>
+        </section>
+        <section class="card">
+          <h2>Rank Liderleri</h2>
+          <div>${topChat.length ? topChat.map(([id, entry]) => `<p class="mono">${id} - ${entry.level || 0}lv / ${entry.xp || 0}xp</p>`).join("") : "<p>Veri yok</p>"}</div>
         </section>
         <section class="card">
           <h2>Yedekler</h2>
@@ -160,6 +203,7 @@ function startDashboard(client) {
       ok: true,
       guilds: client.guilds.cache.size,
       dashboard: true,
+      prod: buildProdStatus(),
     });
   });
 
@@ -183,6 +227,10 @@ function startDashboard(client) {
     res.json(client.guilds.cache.map((guild) => summarizeGuild(client, guild)));
   });
 
+  app.get("/api/runtime", (req, res) => {
+    res.json(buildProdStatus());
+  });
+
   app.get("/api/guilds/:guildId/overview", (req, res) => {
     const guild = client.guilds.cache.get(req.params.guildId);
     if (!guild) {
@@ -194,6 +242,7 @@ function startDashboard(client) {
       guild: summarizeGuild(client, guild),
       config: configData,
       backups: listBackups().filter((entry) => entry.guildId === guild.id),
+      prod: buildProdStatus(),
     });
   });
 
@@ -240,6 +289,36 @@ function startDashboard(client) {
       partners: cfg.community.partnership.partners || [],
       applicants: cfg.community.partnership.applicants || {},
       blacklist: cfg.community.partnership.blacklist || [],
+    });
+  });
+
+  app.get("/api/guilds/:guildId/community", (req, res) => {
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) {
+      res.status(404).json({ error: "Guild not found" });
+      return;
+    }
+    const cfg = getGuildConfig(guild.id);
+    res.json({
+      ticket: cfg.community.ticket,
+      applications: cfg.community.applications,
+      feedback: cfg.community.feedback,
+      customCommands: cfg.community.customCommands || [],
+    });
+  });
+
+  app.get("/api/guilds/:guildId/progression", (req, res) => {
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) {
+      res.status(404).json({ error: "Guild not found" });
+      return;
+    }
+    const cfg = getGuildConfig(guild.id);
+    res.json({
+      messages: cfg.stats.messages || {},
+      voiceSeconds: cfg.stats.voiceSeconds || {},
+      partnerScores: cfg.stats.partnerScores || {},
+      staff: cfg.stats.staff || {},
     });
   });
 
@@ -313,8 +392,9 @@ function startDashboard(client) {
     res.json({ ok: true });
   });
 
-  const server = app.listen(config.dashboard.port, () => {
+  const server = app.listen(config.dashboard.port, config.dashboard.host, () => {
     logger.info("Dashboard started", {
+      host: config.dashboard.host,
       port: config.dashboard.port,
     });
   });

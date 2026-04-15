@@ -1,6 +1,7 @@
 const { getGuildConfig, patchGuildConfig } = require("../../data/store");
 const { sendLog } = require("../logging/sendLog");
 const { COLORS } = require("../../constants");
+const { recordPartnerRenewal } = require("../progression/ranking");
 
 function extendPartner(guildId, serverName, days) {
   const config = getGuildConfig(guildId);
@@ -12,6 +13,9 @@ function extendPartner(guildId, serverName, days) {
   const currentExpiry = partners[index].expiresAt || Date.now();
   partners[index].expiresAt = Math.max(Date.now(), currentExpiry) + days * 24 * 60 * 60 * 1000;
   partners[index].renewedAt = Date.now();
+  if (partners[index].userId) {
+    recordPartnerRenewal(guildId, partners[index].userId);
+  }
   patchGuildConfig(guildId, {
     community: {
       partnership: {
@@ -70,4 +74,3 @@ module.exports = {
   extendPartner,
   processPartnerRenewals,
 };
-

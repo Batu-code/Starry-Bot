@@ -1,6 +1,6 @@
-# The Art Of Yapping Bot
+# Bocchi
 
-Advanced, modular Discord bot:
+Advanced, modular Discord bot for community management:
 
 - Anti-raid, anti-nuke, anti-spam, anti-alt, risk scoring, and lockdown protections
 - Anti-phishing, anti-alt, rollback, and risk support
@@ -15,6 +15,8 @@ Advanced, modular Discord bot:
 - Temporary voice rooms and server stat channels
 - Event RSVPs, partner renewals, moderator analytics, and auto punishment escalation
 - Scam text shield, moderator audit, and advanced server snapshots
+- Ticket v2, applications, suggestions/complaints, and staff performance scoring
+- Weekly reports, permission audits, custom commands, and production heartbeat checks
 
 ## Setup
 
@@ -32,6 +34,12 @@ npm install
 npm run start
 ```
 
+Environment validation:
+
+```powershell
+npm run validate:env
+```
+
 Windows shortcut:
 
 ```powershell
@@ -45,11 +53,35 @@ npm run check
 npm test
 ```
 
+## Production
+
+PM2:
+
+```powershell
+pm2 start ecosystem.config.cjs
+```
+
+Docker:
+
+```powershell
+docker compose up -d --build
+```
+
+Healthcheck:
+
+```powershell
+npm run healthcheck
+```
+
 ## Notes
 
 - Music uses `discord-player`.
 - Slash commands are registered automatically when the bot starts.
 - The default security posture is intentionally strict; tune it with `/guvenlik-kur`.
+- `/guvenlik-paneli` icindeki `Izin Denetimi` ve `Prod Durumu` butonlariyla hizli kontrol yapabilirsin.
+- `setup-sihirbazi` temel topluluk kanallari, ticket v2, haftalik rapor ve panelleri otomatik kurar.
+- Haftalik rapor ayari `/topluluk-kur` icinden yapilabilir.
+- Docker `compose.yaml` log rotation ve healthcheck ile gelir.
 - Slash command names are Turkish, but use ASCII letters for Discord compatibility.
 - `DATABASE_MODE=sqlite` ayarlarsan `better-sqlite3` ile SQLite depolamasi kullanir; aksi halde JSON ile devam eder.
 - `DASHBOARD_ENABLED=true` ile Express tabanli dashboard acilir.

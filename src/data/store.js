@@ -9,6 +9,7 @@ function ensureDataLayout() {
   provider.readRuntime("giveaways", []);
   provider.readRuntime("backups", []);
   provider.readRuntime("snapshots", []);
+  provider.readRuntime("heartbeat", {});
 }
 
 function getGuildConfig(guildId) {
