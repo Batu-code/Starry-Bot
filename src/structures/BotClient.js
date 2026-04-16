@@ -4,7 +4,6 @@ const {
   GatewayIntentBits,
   Partials,
 } = require("discord.js");
-const { Player } = require("discord-player");
 
 class BotClient extends Client {
   constructor() {
@@ -32,7 +31,6 @@ class BotClient extends Client {
       voiceSessions: new Map(),
     };
 
-    this.player = new Player(this);
     this.services = {
       dashboard: null,
     };

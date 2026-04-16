@@ -2,7 +2,6 @@ const express = require("express");
 const config = require("../config");
 const { getGuildConfig, patchGuildConfig } = require("../data/store");
 const { createBackup, listBackups } = require("../modules/security/backups");
-const { addBalance } = require("../modules/economy/system");
 const { scheduleAnnouncement } = require("../modules/community/announcements");
 const { buildProdStatus } = require("../modules/system/runtimeHealth");
 const logger = require("../utils/logger");
@@ -26,7 +25,6 @@ function summarizeGuild(client, guild) {
       antiRaid: cfg.security.antiRaid.enabled,
       antiSpam: cfg.security.antiSpam.enabled,
       ai: cfg.community.ai.enabled,
-      music: cfg.music.enabled,
       partnership: cfg.community.partnership.enabled,
       applications: cfg.community.applications.enabled,
       feedback: cfg.community.feedback.enabled,
@@ -45,7 +43,7 @@ function renderHome(client) {
         <h2>${guild.name}</h2>
         <p>Uye: ${guild.members}</p>
         <p>Anti-Raid: ${guild.features.antiRaid ? "Acik" : "Kapali"} | AI: ${guild.features.ai ? "Acik" : "Kapali"}</p>
-        <p>Muzik: ${guild.features.music ? "Acik" : "Kapali"} | Partnerlik: ${guild.features.partnership ? "Acik" : "Kapali"}</p>
+        <p>Partnerlik: ${guild.features.partnership ? "Acik" : "Kapali"}</p>
         <p>Basvuru: ${guild.features.applications ? "Acik" : "Kapali"} | Geri Bildirim: ${guild.features.feedback ? "Acik" : "Kapali"} | Ozel Komut: ${guild.features.customCommands}</p>
         <p>Haftalik Rapor: ${guild.features.weeklyReports ? "Acik" : "Kapali"}</p>
         <p><a href="/guilds/${guild.id}?token=${encodeURIComponent(config.dashboard.token)}">Detay sayfasi</a></p>
@@ -83,15 +81,11 @@ function getGuildDetail(client, guildId) {
 
   const cfg = getGuildConfig(guild.id);
   const moderationCases = (cfg.moderation.cases || []).slice(-8).reverse();
-  const richest = Object.entries(cfg.economy.balances || {})
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
 
   return {
     guild,
     cfg,
     moderationCases,
-    richest,
     partners: (cfg.community.partnership.partners || []).slice(-5).reverse(),
     backups: listBackups().filter((entry) => entry.guildId === guild.id).slice(0, 5),
     tickets: Object.values(cfg.community.ticket.records || {}).slice(-5).reverse(),
@@ -109,7 +103,7 @@ function renderGuildDetail(client, guildId) {
     return null;
   }
 
-  const { guild, cfg, moderationCases, richest, partners, backups, tickets, applications, feedbackItems, topChat } = detail;
+  const { guild, cfg, moderationCases, partners, backups, tickets, applications, feedbackItems, topChat } = detail;
   const prod = buildProdStatus();
   return `<!doctype html>
   <html lang="tr">
@@ -141,10 +135,6 @@ function renderGuildDetail(client, guildId) {
           <p>Saglikli: ${prod.healthy ? "Evet" : "Hayir"}</p>
           <p>PID: ${prod.pid || "-"}</p>
           <p>Bellek: ${prod.memoryMb} MB</p>
-        </section>
-        <section class="card">
-          <h2>Ekonomi Liderleri</h2>
-          <div>${richest.length ? richest.map(([id, amount]) => `<p class="mono">${id} - ${amount}</p>`).join("") : "<p>Veri yok</p>"}</div>
         </section>
         <section class="card">
           <h2>Son Moderasyon</h2>
@@ -260,24 +250,6 @@ function startDashboard(client) {
     });
   });
 
-  app.get("/api/guilds/:guildId/economy", (req, res) => {
-    const guild = client.guilds.cache.get(req.params.guildId);
-    if (!guild) {
-      res.status(404).json({ error: "Guild not found" });
-      return;
-    }
-    const cfg = getGuildConfig(guild.id);
-    const leaderboard = Object.entries(cfg.economy.balances || {})
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(([userId, balance]) => ({ userId, balance }));
-    res.json({
-      leaderboard,
-      shop: cfg.economy.shop,
-      clans: cfg.economy.clans,
-    });
-  });
-
   app.get("/api/guilds/:guildId/partnerships", (req, res) => {
     const guild = client.guilds.cache.get(req.params.guildId);
     if (!guild) {
@@ -348,12 +320,6 @@ function startDashboard(client) {
         },
       },
     });
-    res.json({ ok: true });
-  });
-
-  app.post("/api/guilds/:guildId/economy/grant", (req, res) => {
-    const { userId, amount } = req.body;
-    addBalance(req.params.guildId, userId, Number(amount) || 0);
     res.json({ ok: true });
   });
 

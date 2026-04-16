@@ -49,19 +49,6 @@ module.exports = {
           ].join("\n"),
         },
         {
-          name: "Muzik",
-          value: [
-            `Durum: ${config.music.enabled ? "Acik" : "Kapali"}`,
-            `DJ rolu: ${config.music.djRoleId ? `<@&${config.music.djRoleId}>` : "Yok"}`,
-            `Ses: ${config.music.defaultVolume}`,
-            `Kuyruk limiti: ${config.music.maxQueueSize}`,
-            `Otomatik mod: ${config.music.autoplay ? "Acik" : "Kapali"}`,
-            `24/7 mod: ${config.music.alwaysOn ? "Acik" : "Kapali"}`,
-            `Kayitli playlist: ${Object.keys(config.music.savedPlaylists || {}).length}`,
-            `Favori listeler: ${Object.keys(config.music.favoriteTracks || {}).length}`,
-          ].join("\n"),
-        },
-        {
           name: "Moderasyon",
           value: [
             `Toplam case: ${config.moderation.cases.length}`,

@@ -1,7 +1,6 @@
 const { getGuildConfig, patchGuildConfig } = require("../../data/store");
 const { sendLog } = require("../logging/sendLog");
 const { COLORS } = require("../../constants");
-const { addBalance } = require("../economy/system");
 const { completeTask } = require("../progression/profiles");
 const { evaluateAutoStaff } = require("../community/staffRecruitment");
 
@@ -84,7 +83,6 @@ async function detectInviteUse(member) {
     for (const milestone of settings.bonusMilestones || []) {
       if (!isFake && detail.regular >= milestone && !detail.bonusClaimed.includes(milestone)) {
         detail.bonusClaimed.push(milestone);
-        addBalance(member.guild.id, usedInvite.inviterId, settings.milestoneReward || 0);
       }
     }
 
@@ -108,7 +106,6 @@ async function detectInviteUse(member) {
     });
 
     if (!isFake) {
-      addBalance(member.guild.id, usedInvite.inviterId, 75);
       completeTask(member.guild.id, usedInvite.inviterId, "invite_once");
     }
 

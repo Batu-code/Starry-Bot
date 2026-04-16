@@ -1,7 +1,6 @@
 const { ActivityType } = require("discord.js");
 const logger = require("../utils/logger");
 const { startReminderLoop } = require("../modules/community/reminders");
-const { setupPlayer } = require("../modules/music/player");
 const { refreshStats } = require("../modules/community/stats");
 const { releaseExpiredRaidModes } = require("../modules/security/antiRaid");
 const { cacheGuildInvites } = require("../modules/security/inviteTracker");
@@ -24,7 +23,6 @@ module.exports = {
       type: ActivityType.Playing,
     });
 
-    await setupPlayer(client);
     startReminderLoop(client);
     startGiveawayLoop(client);
     markReady(client);

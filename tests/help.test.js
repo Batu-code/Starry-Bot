@@ -9,6 +9,6 @@ test("help embed contains key command families", () => {
   assert.match(text, /\/partnerlik-kur/);
   assert.match(text, /\/setup-sihirbazi/);
   assert.match(text, /\/ticket-v2-kur/);
-  assert.match(text, /\/favori-ekle/);
-  assert.match(text, /\/bakiye/);
+  assert.doesNotMatch(text, /\*\*Ekonomi\*\*/);
+  assert.doesNotMatch(text, /\*\*Muzik\*\*/);
 });

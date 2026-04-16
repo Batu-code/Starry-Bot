@@ -2,7 +2,6 @@ const { SlashCommandBuilder } = require("discord.js");
 const { getGuildConfig } = require("../../data/store");
 const { getProfile } = require("../../modules/progression/profiles");
 const { getCombinedRankProfile } = require("../../modules/progression/ranking");
-const { getBalance } = require("../../modules/economy/system");
 const { infoEmbed } = require("../../utils/embeds");
 const { formatDuration } = require("../../utils/time");
 
@@ -17,7 +16,6 @@ module.exports = {
     const invites = config.stats.invites[user.id] || 0;
     const profile = getProfile(interaction.guildId, user.id);
     const rankProfile = getCombinedRankProfile(interaction.guildId, user.id);
-    const balance = getBalance(interaction.guildId, user.id);
     await interaction.reply({
       embeds: [
         infoEmbed(
@@ -31,7 +29,6 @@ module.exports = {
             `Deafen: **${formatDuration(rankProfile.voice.deafenedSeconds * 1000)}**`,
             `Partner puani: **${rankProfile.partner.score}**`,
             `Davet: **${invites}**`,
-            `Bakiye: **${balance}**`,
             `Rozet: ${profile.badges.length ? profile.badges.join(", ") : "Yok"}`,
             `Bio: ${profile.bio || "Yok"}`,
           ].join("\n"),

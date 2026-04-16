@@ -1,7 +1,7 @@
 {
   "name": "the-art-of-yapping-bot",
   "version": "1.0.0",
-  "description": "Advanced Discord bot with security, music, ticketing, leveling, logging, and automation systems.",
+  "description": "Advanced Discord bot with security, ticketing, leveling, logging, and automation systems.",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
@@ -17,12 +17,9 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@discord-player/extractor": "^7.2.0",
-    "discord-player": "^7.0.1",
     "discord.js": "^14.19.3",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2",
-    "play-dl": "^1.9.7"
+    "express": "^4.21.2"
   },
   "optionalDependencies": {
     "better-sqlite3": "^11.8.1"

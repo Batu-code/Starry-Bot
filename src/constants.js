@@ -268,16 +268,6 @@ const DEFAULT_GUILD_CONFIG = {
       minPartnerScore: 0,
     },
   },
-  music: {
-    enabled: true,
-    djRoleId: null,
-    defaultVolume: 60,
-    maxQueueSize: 100,
-    autoplay: false,
-    savedPlaylists: {},
-    favoriteTracks: {},
-    alwaysOn: false,
-  },
   state: {
     raidModeUntil: null,
     inviteCache: {},

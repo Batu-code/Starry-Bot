@@ -21,7 +21,12 @@ module.exports = {
     });
 
     await interaction.channel.send({
-      embeds: [infoEmbed("Destek Merkezi", "Yeni destek talebi icin butona tikla, sonra ticket turunu sec.")],
+      embeds: [
+        infoEmbed(
+          "Destek Merkezi",
+          "Herhangi bir konuda birini bildirmek veya bir konuda soru sormak isterseniz Destek Talebi Acarak sorularinizi veya sorunlarinizi giderebilirsiniz.\nNOT: Eger ticket bosu bosuna acilirsa acan kisiye yaptirim uygulanir bilginize.",
+        ),
+      ],
       components: [ticketButtons()],
     });
 

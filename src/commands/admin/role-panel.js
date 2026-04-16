@@ -12,7 +12,7 @@ module.exports = {
     .setDescription("Kullanicilarin kendi rollerini secmesi icin panel gonderir.")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addRoleOption((option) => option.setName("rol_1").setDescription("Ilk rol").setRequired(true))
-    .addRoleOption((option) => option.setName("rol_2").setDescription("Ikinci rol").setRequired(true))
+    .addRoleOption((option) => option.setName("rol_2").setDescription("Ikinci rol").setRequired(false))
     .addRoleOption((option) => option.setName("rol_3").setDescription("Ucuncu rol").setRequired(false))
     .addRoleOption((option) => option.setName("rol_4").setDescription("Dorduncu rol").setRequired(false))
     .addRoleOption((option) => option.setName("rol_5").setDescription("Besinci rol").setRequired(false))
@@ -34,7 +34,7 @@ module.exports = {
     });
 
     await interaction.channel.send({
-      embeds: [infoEmbed("Rol Paneli", "Istegin role butonlardan tiklayarak giris yapabilirsin.")],
+      embeds: [infoEmbed("Rol Paneli", "partnerleri gormek icin tikla")],
       components: buildSelfRoleButtons(roles),
     });
 
