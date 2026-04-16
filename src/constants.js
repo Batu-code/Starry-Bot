@@ -137,7 +137,6 @@ const DEFAULT_GUILD_CONFIG = {
         { id: "destek", label: "Destek" },
         { id: "bug", label: "Bug Bildirimi" },
         { id: "yetkili", label: "Yetkili Yardimi" },
-        { id: "odeme", label: "Odeme" },
         { id: "diger", label: "Diger" },
       ],
     },
