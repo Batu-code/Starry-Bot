@@ -3,7 +3,6 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-const { getGuildConfig } = require("../../data/store");
 
 function buildSelfRoleButtons(roles) {
   const rows = [];
@@ -30,16 +29,31 @@ function buildSelfRoleButtons(roles) {
   return rows;
 }
 
+function messageContainsRoleButton(message, roleId) {
+  if (!message?.components?.length) {
+    return false;
+  }
+
+  return message.components.some((row) =>
+    row.components.some((component) => component.customId === `selfrole:${roleId}`));
+}
+
 async function toggleSelfRole(interaction, roleId) {
-  const guildConfig = getGuildConfig(interaction.guildId);
-  const exists = guildConfig.community.selfRoles.some((item) => item.id === roleId);
-  if (!exists) {
+  if (!messageContainsRoleButton(interaction.message, roleId)) {
     throw new Error("Bu rol panelde tanimli degil.");
   }
 
   const role = interaction.guild.roles.cache.get(roleId);
   if (!role) {
     throw new Error("Rol bulunamadi.");
+  }
+
+  if (role.managed) {
+    throw new Error("Bu rol elle verilip kaldirilamaz.");
+  }
+
+  if (!role.editable) {
+    throw new Error("Bu rolu yonetemiyorum. Rol siralarini kontrol et.");
   }
 
   if (interaction.member.roles.cache.has(role.id)) {
